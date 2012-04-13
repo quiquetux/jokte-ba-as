@@ -1,0 +1,60 @@
+# $Id: Makefile.kmk $
+## @file
+# Top-level makefile for the src directory.
+#
+
+#
+# Copyright (C) 2006-2010 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ..
+include $(KBUILD_PATH)/subheader.kmk
+
+if defined(VBOX_ONLY_ADDITIONS)
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+
+else if defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK)
+ include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+
+else if defined(VBOX_ONLY_EXTPACKS)
+ include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+ ifndef VBOX_ONLY_EXTPACKS_USE_IMPLIBS
+  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
+ endif
+
+else if defined(VBOX_ONLY_TESTSUITE)
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+
+else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK && !VBOX_ONLY_TESTSUITE
+ include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
+ if1of ($(KBUILD_TARGET_ARCH), x86 amd64)
+  include $(PATH_SUB_CURRENT)/recompiler/Makefile.kmk
+ endif
+ ifneq ($(wildcard $(PATH_SUB_CURRENT)/apps),)
+  include $(PATH_SUB_CURRENT)/apps/Makefile.kmk
+ endif
+ ifdef VBOX_WITH_TESTSUITE
+  include $(PATH_SUB_CURRENT)/tests/Makefile.kmk
+ endif
+ ifdef VBOX_WITH_TESTCASES
+  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
+ endif
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_EXTPACKS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK && !VBOX_ONLY_TESTSUITE
+
+include $(KBUILD_PATH)/subfooter.kmk
+

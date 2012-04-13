@@ -1,0 +1,117 @@
+# $Id: Makefile.kmk $
+## @file
+# Top-level makefile for the VBox Host drivers.
+#
+
+#
+# Copyright (C) 2006-2010 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+# Include sub-makefiles.
+include $(PATH_SUB_CURRENT)/Support/Makefile.kmk
+
+if  !defined(VBOX_ONLY_DOCS) \
+ && !defined(VBOX_ONLY_EXTPACKS) \
+ && !defined(VBOX_ONLY_TESTSUITE)
+ if1of ($(KBUILD_TARGET),win)
+  include $(PATH_SUB_CURRENT)/win/Makefile.kmk
+ endif
+ ifdef VBOX_WITH_USB
+  include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
+ endif
+ if1of ($(KBUILD_TARGET), darwin solaris win linux freebsd)
+  ifdef VBOX_WITH_NETFLT
+   include $(PATH_SUB_CURRENT)/VBoxNetFlt/Makefile.kmk
+  endif
+ endif
+ if1of ($(KBUILD_TARGET), darwin solaris linux freebsd)
+  ifdef VBOX_WITH_NETADP
+   include $(PATH_SUB_CURRENT)/VBoxNetAdp/Makefile.kmk
+  else
+  endif
+ endif
+ ifeq ($(KBUILD_TARGET),darwin)
+  include $(PATH_SUB_CURRENT)/darwin/Makefile.kmk
+ endif
+
+ if1of ($(KBUILD_TARGET), linux)
+  ifdef VBOX_WITH_PCI_PASSTHROUGH
+   include $(PATH_SUB_CURRENT)/VBoxPci/Makefile.kmk
+  endif
+ endif
+
+ if1of ($(KBUILD_TARGET),linux freebsd)
+  #
+  # Install the Makefile for module compilation on Linux and FreeBSD hosts
+  #
+  INSTALLS += HostDrivers-src
+  HostDrivers-src_INST            = bin/src/
+  HostDrivers-src_MODE            = a+r,u+w
+  HostDrivers-src_SOURCES.linux   = linux/Makefile
+  HostDrivers-src_SOURCES.freebsd = freebsd/Makefile
+ endif
+
+ if1of ($(KBUILD_TARGET),linux)
+  INSTALLS += HostDrivers-dkms-sh
+  HostDrivers-dkms-sh_INST    = bin/src/
+  HostDrivers-dkms-sh_MODE    = a+rx,u+w
+  HostDrivers-dkms-sh_SOURCES = $(HostDrivers-dkms-sh_0_OUTDIR)/do_dkms
+  HostDrivers-dkms-sh_CLEAN   = $(HostDrivers-dkms-sh_0_OUTDIR)/do_dkms
+
+  INSTALLS += HostDrivers-dkms-src
+  HostDrivers-dkms-src_INST    = bin/src/
+  HostDrivers-dkms-src_MODE    = a+r,u+w
+  HostDrivers-dkms-src_SOURCES = $(HostDrivers-dkms-src_0_OUTDIR)/dkms.conf
+  HostDrivers-dkms-src_CLEAN   = $(HostDrivers-dkms-src_0_OUTDIR)/dkms.conf
+
+$$(HostDrivers-dkms-src_0_OUTDIR)/dkms.conf: \
+		$(PATH_SUB_CURRENT)/linux/dkms.conf \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) \
+		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
+		-e "s;_OMIT_VBOXNETFLT_;$(if $(VBOX_WITH_NETFLT),,#);g" \
+		-e "s;_OMIT_VBOXNETADP_;$(if $(VBOX_WITH_NETADP),,#);g" \
+		-e "s;_OMIT_VBOXPCI_;$(if $(VBOX_WITH_PCI_PASSTHROUGH),,#);g" \
+		--output $@ $<
+
+$$(HostDrivers-dkms-sh_0_OUTDIR)/do_dkms: \
+		$(PATH_SUB_CURRENT)/linux/do_dkms \
+		$(VBOX_VERSION_STAMP) \
+		| $$(dir $$@)
+	$(call MSG_TOOL,Creating,,$@)
+	$(QUIET)$(SED) \
+		-e "s;_VERSION_;${VBOX_VERSION_STRING};g" \
+		-e "s;_MODULE_;vboxhost;g" \
+		-e "s;_OLDMODULES_;vboxhost vboxdrv vboxnetflt vboxnetadp;g" \
+		--output $@ $<
+	$(QUIET)$(CHMOD) a+rx,u+w $@
+
+ endif
+
+ if1of ($(KBUILD_TARGET),freebsd)
+  #
+  # Install the export_modules script for tar'ing the module sources on FreeBSD hosts
+  #
+  INSTALLS += HostDrivers-sh
+  HostDrivers-sh_INST    = bin/
+  HostDrivers-sh_MODE    = a+rx,u+w
+  HostDrivers-sh_SOURCES.freebsd = freebsd/export_modules
+ endif
+endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
+
+# Let kBuild generate the rules.
+include $(KBUILD_PATH)/subfooter.kmk
+

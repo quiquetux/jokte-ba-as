@@ -1,0 +1,44 @@
+# $Id: Makefile.kmk $
+## @file
+# Sub-Makefile for various generic build tools (there is currently only one of them).
+#
+
+#
+# Copyright (C) 2006-2010 Oracle Corporation
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+
+SUB_DEPTH = ../..
+include $(KBUILD_PATH)/subheader.kmk
+
+BLDPROGS += bin2c biossums filesplitter
+
+bin2c_TEMPLATE = VBOXBLDPROG
+bin2c_SOURCES = bin2c.c
+
+biossums_TEMPLATE = VBOXBLDPROG
+biossums_SOURCES = biossums.c
+
+filesplitter_TEMPLATE = VBOXBLDPROG
+filesplitter_SOURCES = filesplitter.cpp
+
+if  !defined(VBOX_ONLY_ADDITIONS) \
+ && !defined(VBOX_ONLY_DOCS) \
+ && !defined(VBOX_ONLY_EXTPACKS) \
+ && !defined(VBOX_ONLY_SDK)
+ PROGRAMS += scm
+ scm_TEMPLATE = VBOXR3EXE
+ scm_SOURCES = scm.cpp
+ scm_LIBS = \
+ 	$(LIB_RUNTIME)
+endif
+
+include $(KBUILD_PATH)/subfooter.kmk
+
